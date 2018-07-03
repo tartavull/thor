@@ -5,21 +5,9 @@
 # #then make all the even files readable but the user running this script
 # # sudo chmod a+r /dev/input/event*
 
-
-from evdev import InputDevice, categorize, ecodes ,UInput
-print ecodes.__file__
+from evdev import InputDevice, ecodes ,UInput
 from select import select
-import ui
-
-# A mapping of file descriptors (integers) to InputDevice instances.
-devices = map(InputDevice, ('/dev/input/event14','/dev/input/event15')) 
-# devices = map(InputDevice, ('/dev/input/event3',)) 
-
-devices = {dev.fd: dev for dev in devices}
-
-for dev in devices.values(): 
-  print(dev)
-  dev.grab()
+#import ui
 
 from collections import defaultdict
 dmap = { 'a403':'r', 'a496':'l', 'oard':'r'}
@@ -107,28 +95,30 @@ def get_label(ecode):
     else:
       return ecodes.KEY[ecode][4:]
 
-uinput  =  UInput()
-mode = 0
-while True:
-    r, w, x = select(devices, [], [])
-    for fd in r:
-        for event in devices[fd].read():
-          if event.type == ecodes.EV_KEY:
-            device_name = devices[fd].name[-4:]
-            device_hand = dmap[device_name]
-            button_number = kmap_hard[device_hand][event.code]
-            button_name = '{}{}'.format(device_hand, button_number)
-            code = kmap_soft[button_name][mode]
-            if type(code) == str and event.value < 2:
-              mode = int(code)
-        
-            for k, v in kmap_soft.iteritems():
-              ui.status[k]['label'] = get_label(v[mode])
+def execute():
+    uinput  =  UInput()
+    mode = 0
+    while True:
+        r, w, x = select(devices, [], [])
+        for fd in r:
+            for event in devices[fd].read():
+              if event.type == ecodes.EV_KEY:
+                device_name = devices[fd].name[-4:]
+                device_hand = dmap[device_name]
+                button_number = kmap_hard[device_hand][event.code]
+                button_name = '{}{}'.format(device_hand, button_number)
+                code = kmap_soft[button_name][mode]
+                if type(code) == str and event.value < 2:
+                  mode = int(code)
+            
+                for k, v in kmap_soft.iteritems():
+                  ui.status[k]['label'] = get_label(v[mode])
 
 
 
-            ui.status[button_name]['down'] = event.value
-            ui.update()
-            if type(code) is int:
-              uinput.write(ecodes.EV_KEY, kmap_soft[button_name][mode], event.value)
-              uinput.syn()
+                ui.status[button_name]['down'] = event.value
+                ui.update()
+                if type(code) is int:
+                  uinput.write(ecodes.EV_KEY, kmap_soft[button_name][mode], event.value)
+                  uinput.syn()
+

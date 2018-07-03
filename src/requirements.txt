@@ -1,0 +1,6 @@
+evdev==1.0.0
+PyBluez==0.22
+gattlib==0.20150805
+
+
+
